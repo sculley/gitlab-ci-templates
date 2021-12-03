@@ -29,7 +29,7 @@ variables:
   BUILDX_BUILDER: buildx
   BUILDX_PLATFORM: linux/arm64
 
-  BUILD_TOOLS_URL: gitlab.com:novatiq/ops/gitlab-ci-build-tools.git
+  BUILD_TOOLS_URL: gitlab.com:sculley/ops/gitlab-ci-build-tools.git
 
 services:
   - docker:dind
