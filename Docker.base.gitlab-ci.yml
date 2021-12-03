@@ -35,11 +35,11 @@ services:
   - docker:dind
 
 stages:
-  - build
+  - .build
 
-build:
+.build:
   stages:
-    - build
+    - .build
   variables:
     IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
   script:
