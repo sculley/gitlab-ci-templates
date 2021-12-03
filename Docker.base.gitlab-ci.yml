@@ -34,6 +34,9 @@ variables:
 services:
   - docker:dind
 
+stages:
+  - build
+
 build:
   stages:
     - build
