@@ -1,0 +1,48 @@
+image: docker:latest
+
+variables:
+  # When using dind service, we need to instruct docker to talk with
+  # the daemon started inside of the service. The daemon is available
+  # with a network connection instead of the default
+  # /var/run/docker.sock socket.
+  # port 2375 for no TLS connection (insecure)
+  # port 2376 for TLS connection
+  DOCKER_HOST: tcp://docker:2376
+
+  # Specify to Docker where to create the certificates, Docker will
+  # create them automatically on boot, and will create
+  # `/certs/client` that will be shared between the service and job
+  # container, thanks to volume mount from config.toml
+  DOCKER_TLS_CERTDIR: "/certs"
+  
+  # These are usually specified by the entrypoint, however the
+  # Kubernetes executor doesn't run entrypoints
+  # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4125
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+  # These are for buildx
+  DOCKER_DRIVER: overlay2
+  DOCKER_BUILDKIT: 1
+  DOCKER_CLI_EXPERIMENTAL: enabled
+  BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+  BUILDX_BUILDER: buildx
+  BUILDX_PLATFORM: linux/arm64
+
+  BUILD_TOOLS_URL: gitlab.com:novatiq/ops/gitlab-ci-build-tools.git
+
+services:
+  - docker:dind
+
+build:
+  stages:
+    - build
+  variables:
+    IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  script:
+    - |
+      apk add git
+      git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@${BUILD_TOOLS_URL} .
+      echo "Building docker image ${IMAGE}"
+      echo "docker build -t $IMAGE ."
+      echo "docker push $IMAGE"
