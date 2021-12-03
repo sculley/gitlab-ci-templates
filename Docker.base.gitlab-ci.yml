@@ -28,9 +28,7 @@ variables:
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
   BUILDX_BUILDER: buildx
   BUILDX_PLATFORM: linux/arm64
-
-  BUILD_TOOLS_URL: gitlab.com:sculley/ops/gitlab-ci-build-tools.git
-
+  
 services:
   - docker:dind
 
@@ -44,8 +42,6 @@ stages:
     IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
   script:
     - |
-      apk add git
-      git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@${BUILD_TOOLS_URL} .
       echo "Building docker image ${IMAGE}"
       echo "docker build -t $IMAGE ."
       echo "docker push $IMAGE"
