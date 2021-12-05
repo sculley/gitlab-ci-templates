@@ -37,9 +37,10 @@ services:
   variables:
     BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
+    - BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
     - |
       echo "Building docker image: ${BUILD_IMAGE}"
-      BUILD_ARGS=$(cat Docker.build.args 2>/dev/null | sed 's@^@--build-arg @g' | paste -s -d " ")
+      echo "Build Args: ${BUILD_ARGS}"
       echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
       echo "docker push ${BUILD_IMAGE}"
 
