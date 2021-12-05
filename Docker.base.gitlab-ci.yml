@@ -39,7 +39,11 @@ services:
   script:
     - |
       echo "Building docker image: ${BUILD_IMAGE}"
-      echo "docker build -t ${BUILD_IMAGE} $(for i in `cat Docker.build.args`; do ARG+="--build-arg $i " ; done; echo $ARG;ARG="") ."
+      for arg in $(cat Docker.build.args)
+      do
+        ARGS+="--build-arg $arg ";
+      done;
+      echo "docker build -t ${BUILD_IMAGE} ${ARGS} ."
       echo "docker push ${BUILD_IMAGE}"
 
 .publish:
