@@ -35,20 +35,20 @@ services:
 .build:
   stage: build
   variables:
-    IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+    BUILD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
   script:
     - |
-      echo "Building docker image: ${IMAGE}"
-      echo "docker build -t $IMAGE ."
-      echo "docker push $IMAGE"
+      echo "Building docker image: ${BUILD_IMAGE}"
+      echo "docker build -t ${BUILD_IMAGE} ."
+      echo "docker push ${BUILD_IMAGE}"
 
 .publish:
   stage: publish
   variables:
-    IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+    BUILD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
   script:
     - |
-      echo "Publishing image: ${IMAGE}"
-      echo "docker pull -t $IMAGE ."
-      echo "docker push $IMAGE"
+      echo "Publishing image: ${BUILD_IMAGE}"
+      echo "docker pull -t ${BUILD_IMAGE} ."
+      echo "docker push ${BUILD_IMAGE}"
     
