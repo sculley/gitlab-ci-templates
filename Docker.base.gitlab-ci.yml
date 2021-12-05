@@ -35,24 +35,21 @@ services:
 .build:
   stage: build
   variables:
-    BUILD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
     - |
-      echo "Building docker image: ${BUILD_IMAGE}"
-      for arg in $(cat Docker.build.args)
-      do
-        ARGS+="--build-arg $arg ";
-      done;
-      echo "docker build -t ${BUILD_IMAGE} ${ARGS} ."
-      echo "docker push ${BUILD_IMAGE}"
+      echo "Building docker image: \"${BUILD_IMAGE}\""
+      BUILD_ARGS=$(cat Docker.build.args | sed 's@^@--build-arg @g' | paste -s -d " ")
+      echo "docker build -t \"${BUILD_IMAGE}\" \"${BUILD_ARGS}\" ."
+      echo "docker push \"${BUILD_IMAGE}\""
 
 .publish:
   stage: publish
   variables:
-    BUILD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
     - |
-      echo "Publishing image: ${BUILD_IMAGE}"
-      echo "docker pull -t ${BUILD_IMAGE} ."
-      echo "docker push ${BUILD_IMAGE}"
+      echo "Publishing image: \"${BUILD_IMAGE}\""
+      echo "docker pull -t \"${BUILD_IMAGE}\" ."
+      echo "docker push \"${BUILD_IMAGE}\""
     
