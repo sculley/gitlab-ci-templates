@@ -44,10 +44,11 @@ before_script:
 .build:
   stage: build
   variables:
-    BUILD_IMAGE: '$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA'
+    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
-    - echo "Building docker image: ${BUILD_IMAGE}"
-    - /tools/build.sh -b "${BUILD_ARG_FILE}" -i "${BUILD_IMAGE}"
+    - | 
+      echo "Building docker image: ${BUILD_IMAGE}"
+      bash /tools/build.sh -b $BUILD_ARG_FILE -i $BUILD_IMAGE
 
 .publish:
   stage: publish
