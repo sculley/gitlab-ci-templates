@@ -23,5 +23,3 @@ variables:
   rules:
     - if: $CONTAINER_SCANNING_DISABLED
       when: never
-    - if: $CI_COMMIT_BRANCH &&
-          $GITLAB_FEATURES =~ /\bcontainer_scanning\b/
