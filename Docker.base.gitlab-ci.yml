@@ -28,6 +28,8 @@ variables:
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
   BUILDX_BUILDER: buildx
   BUILDX_PLATFORM: linux/arm64
+  
+  BUILD_ARG_FILE: Docker.build.args
 
 services:
   - docker:dind
@@ -37,12 +39,16 @@ services:
   variables:
     BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
-    - BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
+    - 
     - |
       echo "Building docker image: ${BUILD_IMAGE}"
       echo "Build Args: ${BUILD_ARGS}"
-      echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
-      echo "docker push ${BUILD_IMAGE}"
+      if [ -f "$BUILD_ARG_FILE" ]; then
+        BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
+        echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
+      else
+        echo "docker push ${BUILD_IMAGE} ."
+      fi
 
 .publish:
   stage: publish
