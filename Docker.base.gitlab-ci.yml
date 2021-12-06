@@ -42,7 +42,6 @@ services:
     - 
     - |
       echo "Building docker image: ${BUILD_IMAGE}"
-      echo "Build Args: ${BUILD_ARGS}"
       if [ -f "$BUILD_ARG_FILE" ]; then
         BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
         echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
