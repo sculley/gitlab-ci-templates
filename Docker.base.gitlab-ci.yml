@@ -32,25 +32,22 @@ variables:
   # If this file doesn't exist, then we don't build the image
   # with any build-args
   BUILD_ARG_FILE: Docker.build.args
+  BUILD_TOOLS_URL: https://raw.githubusercontent.com/sculley/gitlab-ci-tools/main/tools/build.sh
 
 services:
   - docker:dind
+
+before_script:
+  - apk add --no-cache bash curl
+  - mkdir /tools && curl $BUILD_TOOLS_URL --output /tools/build.sh && chmod +x /tools/build.sh
 
 .build:
   stage: build
   variables:
     BUILD_IMAGE: '$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA'
   script:
-    - apk add bash
-    - /bin/bash
     - echo "Building docker image: ${BUILD_IMAGE}"
-    - |
-      if [ -f "$BUILD_ARG_FILE" ] then
-        BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
-        echo docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} .
-      else
-        echo "docker push ${BUILD_IMAGE} ."
-      fi
+    - /tools/build.sh -b "${BUILD_ARG_FILE}" -i "${BUILD_IMAGE}"
 
 .publish:
   stage: publish
