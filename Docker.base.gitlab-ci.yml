@@ -28,7 +28,9 @@ variables:
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
   BUILDX_BUILDER: buildx
   BUILDX_PLATFORM: linux/arm64
-  
+  # Name/Location of the file containing any build-args to add
+  # If this file doesn't exist, then we don't build the image
+  # with any build-args
   BUILD_ARG_FILE: Docker.build.args
 
 services:
@@ -39,8 +41,10 @@ services:
   variables:
     BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
+    - apk add bash
+    - /bin/bash
+    - echo "Building docker image: ${BUILD_IMAGE}"
     - |
-      echo "Building docker image: ${BUILD_IMAGE}"
       if [ -f "$BUILD_ARG_FILE" ]; then
         BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
         echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
