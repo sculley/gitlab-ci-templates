@@ -20,6 +20,3 @@ variables:
   dependencies: []
   script:
     - gtcs scan
-  rules:
-    - if: $CONTAINER_SCANNING_DISABLED
-      when: never
