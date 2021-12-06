@@ -1,9 +1,9 @@
 variables:
   CS_ANALYZER_IMAGE: registry.gitlab.com/security-products/container-scanning:4
 
-container_scanning:
+.container_scanning:
   image: "$CS_ANALYZER_IMAGE"
-  stage: .test
+  stage: test
   variables:
     # To provide a `vulnerability-allowlist.yml` file, override the GIT_STRATEGY variable in your
     # `.gitlab-ci.yml` file and set it to `fetch`.
