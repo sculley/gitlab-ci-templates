@@ -39,18 +39,18 @@ services:
 .build:
   stage: build
   variables:
-    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
+    BUILD_IMAGE: '$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA'
   script:
     - apk add bash
     - /bin/bash
     - echo "Building docker image: ${BUILD_IMAGE}"
     - |
-      'if [ -f "$BUILD_ARG_FILE" ]; then
+      if [ -f "$BUILD_ARG_FILE" ]; then
         BUILD_ARGS=$(cat Docker.build.args 2> /dev/null | sed 's/^/--build-arg /g' | paste -s -d " ")
-        echo docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} .
+        echo docker build -t '${BUILD_IMAGE}' ${BUILD_ARGS} .
       else
         echo "docker push ${BUILD_IMAGE} ."
-      fi'
+      fi
 
 .publish:
   stage: publish
