@@ -32,7 +32,6 @@ variables:
   # If this file doesn't exist, then we don't build the image
   # with any build-args
   BUILD_ARG_FILE: Docker.build.args
-  BUILD_TOOLS_URL: https://raw.githubusercontent.com/sculley/gitlab-ci-tools/main/tools/build.sh
 
 services:
   - docker:dind
