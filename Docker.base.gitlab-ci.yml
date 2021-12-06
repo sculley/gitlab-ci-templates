@@ -45,9 +45,9 @@ services:
       if [ -f "$BUILD_ARG_FILE" ];
       then
         BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
-        echo "docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} ."
+        docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} .
       else
-        echo "docker push ${IMAGE} ."
+        docker push ${IMAGE} .
       fi
 
 .publish:
