@@ -41,14 +41,14 @@ services:
   variables:
     BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
   script:
-    - echo "Building image: ${IMAGE}"
+    - echo "Building image: ${BUILD_IMAGE}"
     - |
       if [ -f "$BUILD_ARG_FILE" ];
       then
         BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
         docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} .
       else
-        docker push ${IMAGE}
+        docker push ${BUILD_IMAGE}
       fi
 
 .publish:
