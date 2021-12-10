@@ -1,23 +1,32 @@
-variables:
-  CS_ANALYZER_IMAGE: registry.gitlab.com/security-products/container-scanning:4
-
-.container_scanning:
-  image: "$CS_ANALYZER_IMAGE"
-  stage: test
-  variables:
-    # To provide a `vulnerability-allowlist.yml` file, override the GIT_STRATEGY variable in your
-    # `.gitlab-ci.yml` file and set it to `fetch`.
-    # For details, see the following links:
-    # https://docs.gitlab.com/ee/user/application_security/container_scanning/index.html#overriding-the-container-scanning-template
-    # https://docs.gitlab.com/ee/user/application_security/container_scanning/#vulnerability-allowlisting
-    GIT_STRATEGY: none
-    DOCKER_IMAGE: $BUILD_IMAGE
+.vulnerability_scanning:
+  image:
+    name: docker.io/aquasec/trivy:latest
+    entrypoint: ["/bin/sh"]
+  stage: scan
   allow_failure: true
+  interruptible: true
+  variables:
+    GIT_STRATEGY: none
+    TRIVY_DEBUG: "false"
+    TRIVY_SEVERITY: "HIGH,CRITICAL"
+    TRIVY_VULN_TYPE: "os,library"
+    TRIVY_TIMEOUT: "5m"
+  timeout: 5m
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+  when: on_success
+  before_script:
+    - apk update && apk add --no-cache docker-cli curl
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - curl -so junit.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
+    - trivy image -f json -o gl-container-scanning-report.json ${IMAGE}
+    - trivy image --format template --template "@junit.tpl" -o gl-container-scanning-report.xml ${IMAGE}
   artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
-      dependency_scanning: gl-dependency-scanning-report.json
-    paths: [gl-container-scanning-report.json, gl-dependency-scanning-report.json]
-  dependencies: []
-  script:
-    - gtcs scan
+      junit: gl-container-scanning-report.xml
+    expire_in: 1 day
