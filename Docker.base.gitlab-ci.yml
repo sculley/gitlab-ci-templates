@@ -39,8 +39,8 @@ services:
   - name: docker:dind
     command: ["--experimental"]
 
-.docker_setup:
-  before_script:
+.build_setup:
+  script:
     # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27384#note_497228752
     - |
       for i in $(seq 1 30)
@@ -65,8 +65,8 @@ services:
 
 .build:
   stage: build
-  extends: .docker_setup
   script:
+    - !reference [.build_setup, script]
     - |
       echo "Identifiying the build args/image.."
       if [ -f "$BUILD_ARG_FILE" ];
@@ -82,8 +82,8 @@ services:
 
 .build-arm64:
   stage: build
-  extends: .docker_setup
   script:
+    - !reference [.build_setup, script]
     - |
       echo "Identifiying the build args/image.."
       if [ -f "$BUILD_ARG_FILE" ];
@@ -97,18 +97,48 @@ services:
     - echo "Building ${BUILD_IMAGE}-arm64"
     - docker buildx build --push --platform linux/arm64 ${BUILD_CMD} .
 
-.publish:
-  stage: publish
-  before_script:
-    - !reference [.docker_setup, before_script]
+.push:
+  stage: push
   variables:
+    PUBLISH_AMD_IMAGE: "true"
+    PUBLISH_ARM_IMAGE: "false"
     PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
-    - docker pull "$BUILD_IMAGE-amd64"
-    - docker pull "$BUILD_IMAGE-arm64"
-    - docker tag "$BUILD_IMAGE-amd64" "$PUBLISH_IMAGE-amd64"
-    - docker tag "$BUILD_IMAGE-arm64" "$PUBLISH_IMAGE-arm64"
-    - docker push "$PUBLISH_IMAGE-amd64"
-    - docker push "$PUBLISH_IMAGE-arm64"
-    - docker manifest create "$PUBLISH_IMAGE" "$PUBLISH_IMAGE-amd64" "$PUBLISH_IMAGE-arm64"
-    - docker manifest push "$PUBLISH_IMAGE"
+    - !reference [.build_setup, script]
+    - |
+      echo "Pushing image ${BUILD_TAG} to $EXTERNAL_REGISTRY_URL"
+      if [ -n "$PUBLISH_AMD_IMAGE" ] && [ -z "$PUBLISH_ARM_IMAGE" ];
+      then
+        # Only publish amd64
+        docker pull ${BUILD_IMAGE}-amd64
+        docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
+        docker push $PUBLISH_IMAGE-amd64
+        echo "Pushed $PUBLISH_IMAGE-amd64"
+      elif [ -n "$PUBLISH_ARM_IMAGE" ] && [ -z "$PUBLISH_AMD_IMAGE" ];
+      then
+        # Only publish amd64
+        docker pull ${BUILD_IMAGE}-arm64
+        docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
+        docker push "$PUBLISH_IMAGE-arm64
+        echo "Pushed $PUBLISH_IMAGE-arm64"
+      elif [ -n "$PUBLISH_AMD_IMAGE" ] && [ -n "$PUBLISH_ARM_IMAGE" ];
+      then
+        # Publish both amd64/arm64 and create single image manifest using
+        # both amd64/arm64 images
+        docker pull ${BUILD_IMAGE}-amd64
+        docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
+        docker push $PUBLISH_IMAGE-amd64
+        echo "Pushed $PUBLISH_IMAGE-amd64"
+        echo -e
+        docker pull ${BUILD_IMAGE}-arm64
+        docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
+        docker push "$PUBLISH_IMAGE-arm64
+        echo "Pushed $PUBLISH_IMAGE-arm64"
+        echo -e
+        echo "Building manifiest $PUBLISH_IMAGE using images $PUBLISH_IMAGE-amd64 $PUBLISH_IMAGE-arm64"
+        docker manifest create $PUBLISH_IMAGE $PUBLISH_IMAGE-amd64 $PUBLISH_IMAGE-arm64
+        docker manifest push $PUBLISH_IMAGE
+        echo "Pushed $PUBLISH_IMAGE"
+      else
+        echo "PUBLISH_AMD_IMAGE or PUBLISH_ARM_IMAGE not set, unable to publish..."
+      fi
