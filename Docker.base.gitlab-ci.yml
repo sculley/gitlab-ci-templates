@@ -112,8 +112,8 @@ services:
     PUSH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
     - !reference [.build_setup, script]
+    - echo "Pushing image ${PUSH_IMAGE}"
     - |
-      echo "Pushing image ${PUSH_IMAGE}"
       if [ -n "$PUSH_AMD64_ENABLED" ] && [ -z "$PUSH_ARM64_ENABLED" ];
       then
         # push amd64
