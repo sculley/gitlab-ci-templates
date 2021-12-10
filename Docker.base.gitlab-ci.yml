@@ -108,7 +108,7 @@ services:
     # in the parent job to control which images are pushed to the external
     # registry
     PUBLISH_AMD_IMAGE: "true"
-    PUBLISH_ARM_IMAGE: "false"
+    PUBLISH_ARM_IMAGE: "true"
     PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
     - !reference [.build_setup, script]
