@@ -109,42 +109,42 @@ services:
 .push:
   stage: push
   variables:
-    PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
+    PUSH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
     - !reference [.build_setup, script]
     - |
-      echo "Pushing image ${PUBLISH_IMAGE}"
+      echo "Pushing image ${PUSH_IMAGE}"
       if [ -n "$PUSH_AMD64_ENABLED" ] && [ -z "$PUSH_ARM64_ENABLED" ];
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
-        docker push $PUBLISH_IMAGE-amd64
-        echo "Pushed $PUBLISH_IMAGE-amd64"
-      elif [ -n "$PUSH_ARM64_ENABLED" ] && [ -z "$PUSH_AMD64_ENABLED" ];
+        docker push ${PUSH_IMAGE}-amd64
+        echo "Pushed ${PUSH_IMAGE}-amd64"
+      elif [ -n "${PUSH_ARM64_ENABLED}" ] && [ -z "${PUSH_AMD64_ENABLED}" ];
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
-        docker push $PUBLISH_IMAGE-arm64
-        echo "Pushed $PUBLISH_IMAGE-arm64"
-      elif [ -n "$PUSH_AMD64_ENABLED" ] && [ -n "$PUSH_ARM64_ENABLED" ];
+        docker push ${PUSH_IMAGE}-arm64
+        echo "Pushed ${PUSH_IMAGE}-arm64"
+      elif [ -n "${PUSH_AMD64_ENABLED}" ] && [ -n "${PUSH_ARM64_ENABLED}" ];
       then
         # Push both amd64/arm64 and create single image manifest using both amd64/arm64 images
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
-        docker push $PUBLISH_IMAGE-amd64
-        echo "Pushed $PUBLISH_IMAGE-amd64"
+        docker push ${PUSH_IMAGE}-amd64
+        echo "Pushed ${PUSH_IMAGE}-amd64"
         echo -e
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
-        docker push $PUBLISH_IMAGE-arm64
-        echo "Pushed $PUBLISH_IMAGE-arm64"
+        docker push ${PUSH_IMAGE}-arm64
+        echo "Pushed ${PUSH_IMAGE}-arm64"
         echo -e
-        echo "Building manifiest $PUBLISH_IMAGE using images $PUBLISH_IMAGE-amd64 $PUBLISH_IMAGE-arm64"
-        docker manifest create $PUBLISH_IMAGE $PUBLISH_IMAGE-amd64 $PUBLISH_IMAGE-arm64
-        docker manifest push $PUBLISH_IMAGE
-        echo "Pushed $PUBLISH_IMAGE"
+        echo "Building manifiest ${PUSH_IMAGE} using images ${PUSH_IMAGE}-amd64 ${PUSH_IMAGE}-arm64"
+        docker manifest create ${PUSH_IMAGE} ${PUSH_IMAGE}-amd64 ${PUSH_IMAGE}-arm64
+        docker manifest push ${PUSH_IMAGE}
+        echo "Pushed ${PUSH_IMAGE}"
       else
-        echo "PUBLISH_AMD_IMAGE or PUBLISH_ARM_IMAGE not set, unable to publish.."
+        echo "PUSH_AMD64_ENABLED or PUSH_ARM64_ENABLED not set, unable to publish.."
       fi
