@@ -1,0 +1,40 @@
+# This Gitlab CI template provides helper jobs which can be referenced using !reference tags 
+# (https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags in other pipeline
+
+variables:
+  # The AWS_PROFILE is set to default and will not likely need to be changed
+  AWS_PROFILE: default
+
+# .aws_setup will install the awscli and setup the credentials
+# AWS_PROFILE
+# AWS_ACCESS_KEY_ID 
+# AWS_SECRET_ACCESS_KEY
+# AWS_DEFAULT_REGION
+.aws_setup:
+  before_script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - |
+        mkdir ~/.aws/
+        touch ~/.aws/credentials
+    - pip3 install awscli
+    - echo "Setting up aws credentials.."
+    - printf "[%s]\naws_access_key_id = %s\naws_secret_access_key = %s\nregion = %s\n" $AWS_PROFILE $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_DEFAULT_REGION >> ~/.aws/credentials
+
+# .ecr_setup will install the awscli and setup the credentials, it then attempts to connect
+# to the provided $ECR_REGISTRY, ensure the following variables are present:
+# AWS_PROFILE
+# AWS_ACCESS_KEY_ID 
+# AWS_SECRET_ACCESS_KEY
+# AWS_DEFAULT_REGION
+# ECR_REGISTRY
+.ecr_setup:
+  before_script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - |
+        mkdir ~/.aws/
+        touch ~/.aws/credentials
+    - pip3 install awscli
+    - printf "[%s]\naws_access_key_id = %s\naws_secret_access_key = %s\nregion = %s\n" $AWS_PROFILE $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_DEFAULT_REGION >> ~/.aws/credentials
+    - echo "Logging into $ECR_REGISTRY"
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
