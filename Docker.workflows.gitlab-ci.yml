@@ -1,0 +1,41 @@
+# Workflow rules for Docker builds
+
+workflow:
+  rules:
+    # set any feature branches image tag to feature-(commit-id)
+    # this will create an image:tag which can be referened using
+    # the commit id in Gitlab
+    - if: $CI_COMMIT_REF_NAME =~ /^feature.*/
+      variables:
+        BUILD_TAG: "feature-$CI_COMMIT_SHORT_SHA"
+        BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$BUILD_TAG"
+        PUBLISH_IMAGE: "${EXTERNAL_REGISTRY_URL}:$BUILD_TAG"
+    # set any develop branches image tag to develop-(commit-id)
+    # this will create an image:tag which can be referened using
+    # the commit id in Gitlab
+    - if: $CI_COMMIT_REF_NAME =~ /^develop.*/
+      variables:
+        BUILD_TAG: "develop-$CI_COMMIT_SHORT_SHA"
+        BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$BUILD_TAG"
+        PUBLISH_IMAGE: "${EXTERNAL_REGISTRY_URL}:$BUILD_TAG"
+    # set any hotfix branches image tag to hotfix-(commit-id)
+    # this will create an image:tag which can be referened using
+    # the commit id in Gitlab
+    - if: $CI_COMMIT_REF_NAME =~ /^hotfix.*/
+      variables:
+        BUILD_TAG: "hotfix-$CI_COMMIT_SHORT_SHA"
+        BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$BUILD_TAG"
+        PUBLISH_IMAGE: "${EXTERNAL_REGISTRY_URL}:$BUILD_TAG"
+      # set any release branches image to release-{version}
+      # subsequent pushes will overwrite the published image:tag
+    - if: $CI_COMMIT_REF_NAME =~ /^release.*/
+      variables:
+        BUILD_TAG: "$CI_COMMIT_REF_SLUG"
+        BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$BUILD_TAG"
+        PUBLISH_IMAGE: "${EXTERNAL_REGISTRY_URL}:$BUILD_TAG"
+    # set the main branche image tag to latest
+    - if: $CI_COMMIT_REF_NAME =~ /main/
+      variables:
+        BUILD_TAG: "latest"
+        BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$BUILD_TAG"
+        PUBLISH_IMAGE: "${EXTERNAL_REGISTRY_URL}:$BUILD_TAG"
