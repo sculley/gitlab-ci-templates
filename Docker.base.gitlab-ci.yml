@@ -1,3 +1,6 @@
+include:
+  - remote: 'https://raw.githubusercontent.com/sculley/gitlab-ci-templates/main/Docker.workflows.gitlab-ci.yml'
+
 image: docker:latest
 
 variables:
@@ -25,39 +28,87 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_BUILDKIT: 1
   DOCKER_CLI_EXPERIMENTAL: enabled
-  BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+  BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-amd64
   BUILDX_BUILDER: buildx
-  BUILDX_PLATFORM: linux/arm64
   # Name/Location of the file containing any build-args to add
   # If this file doesn't exist, then we don't build the image
   # with any build-args
   BUILD_ARG_FILE: Docker.build.args
 
 services:
-  - docker:dind
+  - name: docker:dind
+    command: ["--experimental"]
+
+.docker_setup:
+  before_script:
+    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27384#note_497228752
+    - |
+      for i in $(seq 1 30)
+      do
+          docker info && break
+          echo "Waiting for docker to start"
+          sleep 1s
+      done
+    - |
+      mkdir -p $HOME/.docker
+      echo -e '{\n  "experimental": "enabled"\n}' | tee $HOME/.docker/config.json
+      mkdir -p $HOME/.docker/cli-plugins/
+      wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL
+      chmod a+x $HOME/.docker/cli-plugins/docker-buildx
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker context create pipeline-builder
+    - docker buildx create pipeline-builder --use --driver docker-container --name ${BUILDX_BUILDER}
+    - docker buildx inspect --bootstrap ${BUILDX_BUILDER}
+    - docker version
+    - docker buildx
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
 
 .build:
   stage: build
-  variables:
-    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
+  extends: .docker_setup
   script:
-    - echo "Building image: ${BUILD_IMAGE}"
     - |
+      echo "Identifiying the build args/image.."
       if [ -f "$BUILD_ARG_FILE" ];
       then
         BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
-        docker build -t ${BUILD_IMAGE} ${BUILD_ARGS} .
+        BUILD_CMD="--tag ${BUILD_IMAGE}-amd64 ${BUILD_ARGS}"
+        
       else
-        docker push ${BUILD_IMAGE}
+        BUILD_CMD="-t ${BUILD_IMAGE}-amd64"
       fi
+    - echo "Building ${BUILD_IMAGE}-amd64"
+    - docker buildx build --push --platform linux/amd64 ${BUILD_CMD} .
+
+.build-arm64:
+  stage: build
+  extends: .docker_setup
+  script:
+    - |
+      echo "Identifiying the build args/image.."
+      if [ -f "$BUILD_ARG_FILE" ];
+      then
+        BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
+        BUILD_CMD="--tag ${BUILD_IMAGE}-arm64 ${BUILD_ARGS}"
+        
+      else
+        BUILD_CMD="-t ${BUILD_IMAGE}-arm64"
+      fi
+    - echo "Building ${BUILD_IMAGE}-arm64"
+    - docker buildx build --push --platform linux/arm64 ${BUILD_CMD} .
 
 .publish:
   stage: publish
+  before_script:
+    - !reference [.docker_setup, before_script]
   variables:
-    BUILD_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
+    PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
-    - |
-      echo "Publishing image: ${BUILD_IMAGE}"
-      echo "docker pull -t ${BUILD_IMAGE} ."
-      echo "docker push ${BUILD_IMAGE}"
-    
+    - docker pull "$BUILD_IMAGE-amd64"
+    - docker pull "$BUILD_IMAGE-arm64"
+    - docker tag "$BUILD_IMAGE-amd64" "$PUBLISH_IMAGE-amd64"
+    - docker tag "$BUILD_IMAGE-arm64" "$PUBLISH_IMAGE-arm64"
+    - docker push "$PUBLISH_IMAGE-amd64"
+    - docker push "$PUBLISH_IMAGE-arm64"
+    - docker manifest create "$PUBLISH_IMAGE" "$PUBLISH_IMAGE-amd64" "$PUBLISH_IMAGE-arm64"
+    - docker manifest push "$PUBLISH_IMAGE"
