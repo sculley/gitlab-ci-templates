@@ -32,6 +32,11 @@ variables:
   # with any build-args
   BUILD_ARG_FILE: Docker.build.args
 
+  # By default we expect that both build/build-arm64 jobs would have ran
+  # so we enable pushing both amd64/arm64 images
+  PUSH_AMD64_ENABLED: "true"
+  PUSH_ARM64_ENABLED: "true"
+
 services:
   - name: docker:dind
     command: ["--experimental"]
@@ -104,31 +109,26 @@ services:
 .push:
   stage: push
   variables:
-    # Requires the PUBLISH_AMD|ARM_IMAGE to be present, override these
-    # in the parent job to control which images are pushed to the external
-    # registry
-    PUBLISH_AMD_IMAGE: "true"
-    PUBLISH_ARM_IMAGE: "true"
     PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
     - !reference [.build_setup, script]
     - |
       echo "Pushing image ${PUBLISH_IMAGE}"
-      if [ -n "$PUBLISH_AMD_IMAGE" ] && [ -z "$PUBLISH_ARM_IMAGE" ];
+      if [ -n "$PUSH_AMD64_ENABLED" ] && [ -z "$PUSH_ARM64_ENABLED" ];
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
         docker push $PUBLISH_IMAGE-amd64
         echo "Pushed $PUBLISH_IMAGE-amd64"
-      elif [ -n "$PUBLISH_ARM_IMAGE" ] && [ -z "$PUBLISH_AMD_IMAGE" ];
+      elif [ -n "$PUSH_ARM64_ENABLED" ] && [ -z "$PUSH_AMD64_ENABLED" ];
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
         docker push $PUBLISH_IMAGE-arm64
         echo "Pushed $PUBLISH_IMAGE-arm64"
-      elif [ -n "$PUBLISH_AMD_IMAGE" ] && [ -n "$PUBLISH_ARM_IMAGE" ];
+      elif [ -n "$PUSH_AMD64_ENABLED" ] && [ -n "$PUSH_ARM64_ENABLED" ];
       then
         # Push both amd64/arm64 and create single image manifest using both amd64/arm64 images
         docker pull ${BUILD_IMAGE}-amd64
