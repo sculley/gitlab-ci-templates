@@ -11,6 +11,7 @@ variables:
     # https://docs.gitlab.com/ee/user/application_security/container_scanning/index.html#overriding-the-container-scanning-template
     # https://docs.gitlab.com/ee/user/application_security/container_scanning/#vulnerability-allowlisting
     GIT_STRATEGY: none
+    DOCKER_IMAGE: $BUILD_IMAGE
   allow_failure: true
   artifacts:
     reports:
