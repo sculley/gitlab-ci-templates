@@ -1,7 +1,6 @@
 .vulnerability_scanning:
   image:
     name: docker.io/aquasec/trivy:latest
-    entrypoint: ["/bin/sh"]
   stage: scan
   allow_failure: true
   interruptible: true
@@ -21,10 +20,9 @@
   before_script:
     - apk update && apk add --no-cache docker-cli curl
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  script:
     - curl -so junit.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/junit.tpl
-    - trivy image -f json -o gl-container-scanning-report.json ${IMAGE}
-    - trivy image --format template --template "@junit.tpl" -o gl-container-scanning-report.xml ${IMAGE}
+  script:
+    - image --format template --template "@junit.tpl" -o gl-container-scanning-report.xml ${IMAGE}
   artifacts:
     reports:
       container_scanning: gl-container-scanning-report.json
