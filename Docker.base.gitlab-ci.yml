@@ -113,7 +113,7 @@ services:
   script:
     - !reference [.build_setup, script]
     - |
-      echo "Pushing image ${BUILD_TAG} to $EXTERNAL_REGISTRY_URL"
+      echo "Pushing image ${PUBLISH_IMAGE}"
       if [ -n "$PUBLISH_AMD_IMAGE" ] && [ -z "$PUBLISH_ARM_IMAGE" ];
       then
         # push amd64
@@ -126,7 +126,7 @@ services:
         # push amd64
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
-        docker push "$PUBLISH_IMAGE-arm64
+        docker push $PUBLISH_IMAGE-arm64
         echo "Pushed $PUBLISH_IMAGE-arm64"
       elif [ -n "$PUBLISH_AMD_IMAGE" ] && [ -n "$PUBLISH_ARM_IMAGE" ];
       then
@@ -138,7 +138,7 @@ services:
         echo -e
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
-        docker push "$PUBLISH_IMAGE-arm64
+        docker push $PUBLISH_IMAGE-arm64
         echo "Pushed $PUBLISH_IMAGE-arm64"
         echo -e
         echo "Building manifiest $PUBLISH_IMAGE using images $PUBLISH_IMAGE-amd64 $PUBLISH_IMAGE-arm64"
@@ -146,5 +146,5 @@ services:
         docker manifest push $PUBLISH_IMAGE
         echo "Pushed $PUBLISH_IMAGE"
       else
-        echo "PUBLISH_AMD_IMAGE or PUBLISH_ARM_IMAGE not set, unable to publish..."
+        echo "PUBLISH_AMD_IMAGE or PUBLISH_ARM_IMAGE not set, unable to publish.."
       fi
