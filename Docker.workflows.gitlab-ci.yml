@@ -1,4 +1,5 @@
-# Workflow rules for Docker builds
+# This Gitlab CI template provides workflows to populate variables based on the CI_COMMIT_REF_NAME
+# to generate Docker image build/publish variables to be used when building Docker images.
 
 workflow:
   rules:
