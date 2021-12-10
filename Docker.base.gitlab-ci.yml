@@ -37,6 +37,7 @@ services:
     command: ["--experimental"]
 
 .build_setup:
+  # This is used by other jobs
   script:
     # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27384#note_497228752
     - |
@@ -63,6 +64,9 @@ services:
 .build:
   stage: build
   script:
+    # Builds an linux/amd64 version of the image, the Dockerfile must be platform
+    # independent i.e. you can't use platform specific packages or pass through
+    # variables to handle this
     - !reference [.build_setup, script]
     - |
       echo "Identifiying the build args/image.."
@@ -80,6 +84,9 @@ services:
 .build-arm64:
   stage: build
   script:
+    # Builds an linux/arm64 version of the image, the Dockerfile must be platform
+    # independent i.e. you can't use platform specific packages or pass through
+    # variables to handle this
     - !reference [.build_setup, script]
     - |
       echo "Identifiying the build args/image.."
@@ -97,6 +104,9 @@ services:
 .push:
   stage: push
   variables:
+    # Requires the PUBLISH_AMD|ARM_IMAGE to be present, override these
+    # in the parent job to control which images are pushed to the external
+    # registry
     PUBLISH_AMD_IMAGE: "true"
     PUBLISH_ARM_IMAGE: "false"
     PUBLISH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
@@ -106,22 +116,21 @@ services:
       echo "Pushing image ${BUILD_TAG} to $EXTERNAL_REGISTRY_URL"
       if [ -n "$PUBLISH_AMD_IMAGE" ] && [ -z "$PUBLISH_ARM_IMAGE" ];
       then
-        # Only publish amd64
+        # push amd64
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
         docker push $PUBLISH_IMAGE-amd64
         echo "Pushed $PUBLISH_IMAGE-amd64"
       elif [ -n "$PUBLISH_ARM_IMAGE" ] && [ -z "$PUBLISH_AMD_IMAGE" ];
       then
-        # Only publish amd64
+        # push amd64
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
         docker push "$PUBLISH_IMAGE-arm64
         echo "Pushed $PUBLISH_IMAGE-arm64"
       elif [ -n "$PUBLISH_AMD_IMAGE" ] && [ -n "$PUBLISH_ARM_IMAGE" ];
       then
-        # Publish both amd64/arm64 and create single image manifest using
-        # both amd64/arm64 images
+        # Push both amd64/arm64 and create single image manifest using both amd64/arm64 images
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
         docker push $PUBLISH_IMAGE-amd64
