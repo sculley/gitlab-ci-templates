@@ -25,6 +25,5 @@
     - image --format template --template "@junit.tpl" -o gl-container-scanning-report.xml ${IMAGE}
   artifacts:
     reports:
-      container_scanning: gl-container-scanning-report.json
       junit: gl-container-scanning-report.xml
     expire_in: 1 day
