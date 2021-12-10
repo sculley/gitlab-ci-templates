@@ -118,26 +118,26 @@ services:
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-amd64
-        docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
+        docker tag ${BUILD_IMAGE}-amd64 ${PUSH_IMAGE}-amd64
         docker push ${PUSH_IMAGE}-amd64
         echo "Pushed ${PUSH_IMAGE}-amd64"
       elif [ -n "${PUSH_ARM64_ENABLED}" ] && [ -z "${PUSH_AMD64_ENABLED}" ];
       then
         # push amd64
         docker pull ${BUILD_IMAGE}-arm64
-        docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
+        docker tag ${BUILD_IMAGE}-arm64 ${PUSH_IMAGE}-arm64
         docker push ${PUSH_IMAGE}-arm64
         echo "Pushed ${PUSH_IMAGE}-arm64"
       elif [ -n "${PUSH_AMD64_ENABLED}" ] && [ -n "${PUSH_ARM64_ENABLED}" ];
       then
         # Push both amd64/arm64 and create single image manifest using both amd64/arm64 images
         docker pull ${BUILD_IMAGE}-amd64
-        docker tag ${BUILD_IMAGE}-amd64 $PUBLISH_IMAGE-amd64
+        docker tag ${BUILD_IMAGE}-amd64 ${PUSH_IMAGE}-amd64
         docker push ${PUSH_IMAGE}-amd64
         echo "Pushed ${PUSH_IMAGE}-amd64"
         echo -e
         docker pull ${BUILD_IMAGE}-arm64
-        docker tag ${BUILD_IMAGE}-arm64 $PUBLISH_IMAGE-arm64
+        docker tag ${BUILD_IMAGE}-arm64 ${PUSH_IMAGE}-arm64
         docker push ${PUSH_IMAGE}-arm64
         echo "Pushed ${PUSH_IMAGE}-arm64"
         echo -e
