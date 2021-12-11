@@ -37,3 +37,4 @@ variables:
     - printf "[%s]\naws_access_key_id = %s\naws_secret_access_key = %s\nregion = %s\n" $AWS_PROFILE $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_DEFAULT_REGION >> ~/.aws/credentials
     - echo "Logging into $ECR_REGISTRY"
     - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
