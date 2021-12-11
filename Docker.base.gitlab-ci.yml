@@ -32,7 +32,7 @@ variables:
   # with any build-args
   BUILD_ARG_FILE: Docker.build.args
 
-  # By default we expect that both build/build-arm64 jobs would have ran
+  # By default we expect that both build/build-arm64 jobs would have executed
   # so we enable pushing both amd64/arm64 images
   PUSH_AMD64_ENABLED: "true"
   PUSH_ARM64_ENABLED: "true"
@@ -52,12 +52,10 @@ services:
           echo "Waiting for docker to start"
           sleep 1s
       done
-    - |
-      mkdir -p $HOME/.docker
-      echo -e '{\n  "experimental": "enabled"\n}' | tee $HOME/.docker/config.json
-      mkdir -p $HOME/.docker/cli-plugins/
-      wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL
-      chmod a+x $HOME/.docker/cli-plugins/docker-buildx
+    - mkdir -p $HOME/.docker
+    - mkdir -p $HOME/.docker/cli-plugins/
+    - wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL
+    - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - docker context create pipeline-builder
     - docker buildx create pipeline-builder --use --driver docker-container --name ${BUILDX_BUILDER}
@@ -74,7 +72,7 @@ services:
     # variables to handle this
     - !reference [.build_setup, script]
     - |
-      echo "Identifiying the build args/image.."
+      echo "[INFO] Identifiying the build args/image.."
       if [ -f "$BUILD_ARG_FILE" ];
       then
         BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
@@ -83,7 +81,7 @@ services:
       else
         BUILD_CMD="-t ${BUILD_IMAGE}-amd64"
       fi
-    - echo "Building ${BUILD_IMAGE}-amd64"
+    - echo "[INFO] Building ${BUILD_IMAGE}-amd64"
     - docker buildx build --push --platform linux/amd64 ${BUILD_CMD} .
 
 .build-arm64:
@@ -94,7 +92,7 @@ services:
     # variables to handle this
     - !reference [.build_setup, script]
     - |
-      echo "Identifiying the build args/image.."
+      echo "[INFO] Identifiying the build args/image.."
       if [ -f "$BUILD_ARG_FILE" ];
       then
         BUILD_ARGS=$(cat $BUILD_ARG_FILE | sed 's/^/--build-arg /g' | paste -s -d " ")
@@ -103,62 +101,53 @@ services:
       else
         BUILD_CMD="-t ${BUILD_IMAGE}-arm64"
       fi
-    - echo "Building ${BUILD_IMAGE}-arm64"
+    - echo "[INFO] Building ${BUILD_IMAGE}-arm64"
     - docker buildx build --push --platform linux/arm64 ${BUILD_CMD} .
-
-
-.push_setup:
-  # This is used by other jobs
-  script:
-    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27384#note_497228752
-    - |
-      for i in $(seq 1 30)
-      do
-          docker info && break
-          echo "Waiting for docker to start"
-          sleep 1s
-      done
-     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
 
 .push:
   stage: push
   variables:
     PUSH_IMAGE: "$EXTERNAL_REGISTRY_URL:$BUILD_TAG"
   script:
+    # Pushes the BUILD_IMAGE to the location specified in the EXTERNAL_REGISTRY_URL
+    # by default will attempt to push both amd64/arm64 versions of the image but this
+    # can be controlled by setting the PUSH_AMD64_ENABLED/PUSH_AMD64_ENABLED variables
+    # to empty in the parent job.
     - !reference [.build_setup, script]
-    - echo "Pushing image ${PUSH_IMAGE}"
+    - echo "[INFO] Pushing image ${PUSH_IMAGE}"
     - |
       if [ -n "$PUSH_AMD64_ENABLED" ] && [ -z "$PUSH_ARM64_ENABLED" ];
       then
-        # push amd64
+        # AMD64
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 ${PUSH_IMAGE}-amd64
         docker push ${PUSH_IMAGE}-amd64
-        echo "Pushed ${PUSH_IMAGE}-amd64"
+        echo "[INFO] Pushed ${PUSH_IMAGE}-amd64"
       elif [ -n "${PUSH_ARM64_ENABLED}" ] && [ -z "${PUSH_AMD64_ENABLED}" ];
       then
-        # push amd64
+        # ARM64
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 ${PUSH_IMAGE}-arm64
         docker push ${PUSH_IMAGE}-arm64
-        echo "Pushed ${PUSH_IMAGE}-arm64"
+        echo "[INFO] Pushed ${PUSH_IMAGE}-arm64"
       elif [ -n "${PUSH_AMD64_ENABLED}" ] && [ -n "${PUSH_ARM64_ENABLED}" ];
       then
-        # Push both amd64/arm64 and create single image manifest using both amd64/arm64 images
+        # AMD64/ARM64
         docker pull ${BUILD_IMAGE}-amd64
         docker tag ${BUILD_IMAGE}-amd64 ${PUSH_IMAGE}-amd64
         docker push ${PUSH_IMAGE}-amd64
-        echo "Pushed ${PUSH_IMAGE}-amd64"
+        echo "[INFO] Pushed ${PUSH_IMAGE}-amd64"
         echo -e
         docker pull ${BUILD_IMAGE}-arm64
         docker tag ${BUILD_IMAGE}-arm64 ${PUSH_IMAGE}-arm64
         docker push ${PUSH_IMAGE}-arm64
-        echo "Pushed ${PUSH_IMAGE}-arm64"
+        echo "[INFO] Pushed ${PUSH_IMAGE}-arm64"
         echo -e
-        echo "Building manifiest ${PUSH_IMAGE} using images ${PUSH_IMAGE}-amd64 ${PUSH_IMAGE}-arm64"
+        echo "[INFO] Building manifiest ${PUSH_IMAGE} using images ${PUSH_IMAGE}-amd64 ${PUSH_IMAGE}-arm64"
         docker manifest create ${PUSH_IMAGE} ${PUSH_IMAGE}-amd64 ${PUSH_IMAGE}-arm64
         docker manifest push ${PUSH_IMAGE}
-        echo "Pushed ${PUSH_IMAGE}"
+        echo "[INFO] Pushed ${PUSH_IMAGE}"
       else
-        echo "PUSH_AMD64_ENABLED or PUSH_ARM64_ENABLED not set, unable to publish.."
+        echo "[ERROR] PUSH_AMD64_ENABLED or PUSH_ARM64_ENABLED not set, unable to publish.."
+        exit 1
       fi
