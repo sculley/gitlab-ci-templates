@@ -106,6 +106,20 @@ services:
     - echo "Building ${BUILD_IMAGE}-arm64"
     - docker buildx build --push --platform linux/arm64 ${BUILD_CMD} .
 
+
+.push_setup:
+  # This is used by other jobs
+  script:
+    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27384#note_497228752
+    - |
+      for i in $(seq 1 30)
+      do
+          docker info && break
+          echo "Waiting for docker to start"
+          sleep 1s
+      done
+     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+
 .push:
   stage: push
   variables:
