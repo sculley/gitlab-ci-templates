@@ -1,0 +1,85 @@
+# Terraform/Base.latest
+#
+
+image:
+  name: yelluc/docker-pipeline-builder:tf1.1.7
+  entrypoint: ["/bin/sh", "-c"]
+
+cache:
+  key: "${CI_PROJECT_NAME}-${CI_ENVIRONMENT_NAME}-${CI_PIPELINE_ID}"
+  paths:
+    - ".terraform"
+    - ".terraform.lock.hcl"
+    - "backends.tf"
+
+variables:
+  # expects to be overriden but will look for terraform.tfvars if not
+  TF_VARS_FILE_NAME: "terraform"
+
+.setup_backends:
+  script:
+    if [ ! -z "$TF_BACKEND" ]; 
+    then
+      cat "$TF_BACKEND" > "backends.tf"
+    fi
+
+.terraform:fmt:
+  stage: fmt
+  script:
+    - terraform fmt
+  allow_failure: true
+
+.terraform:init:
+  stage: init
+  script:
+    - !reference [.setup_backends, script]
+    - terraform init
+
+.terraform:validate:
+  stage: validate
+  script:
+    - terraform validate
+  except:
+    variables:
+      - $DESTROY == "TRUE"
+
+.terraform:plan:
+  stage: plan
+  script:
+    - terraform plan -var-file ${TF_VARS_FILE_NAME}.tfvars -out terraform.tfplan
+    - terraform show -json terraform.tfplan > terraform.json
+  artifacts:
+    expire_in: 1 hours
+    paths:
+      - terraform.tfplan
+      - terraform.json
+    reports:
+      terraform: terraform.json
+  except:
+    variables:
+      - $DESTROY == "TRUE"
+
+.terraform:apply:
+  stage: apply
+  script:
+    - terraform apply -input=false terraform.tfplan
+  when: manual
+  only:
+    refs:
+      - /^release.*/
+      - main
+      - tags
+  except:
+    variables:
+      - $DESTROY == "TRUE"
+
+.terraform:destroy:
+  stage: cleanup
+  script:
+    - terraform destroy -var-file ${TF_VARS_FILE_NAME}.tfvars -auto-approve
+  when: manual
+  only:
+    refs:
+      - branches
+    variables:
+      - $DESTROY == "TRUE"
