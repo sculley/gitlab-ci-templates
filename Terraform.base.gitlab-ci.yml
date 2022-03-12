@@ -18,7 +18,7 @@ variables:
 
 .setup_backends:
   script:
-    if [ ! -z "$TF_BACKEND" ]; 
+    if [ ! -z "$TF_BACKEND" ]
     then
       cat "$TF_BACKEND" > "backends.tf"
     fi
