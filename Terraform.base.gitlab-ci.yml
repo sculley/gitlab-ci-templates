@@ -18,10 +18,11 @@ variables:
 
 .setup_backends:
   script:
-    if [ ! -z "$TF_BACKEND" ]
-    then
-      cat "$TF_BACKEND" > "backends.tf"
-    fi
+    - >
+      if [ ! -z "$TF_BACKEND" ];
+      then
+        cat "$TF_BACKEND" > "backends.tf"
+      fi
 
 .terraform:fmt:
   stage: fmt
