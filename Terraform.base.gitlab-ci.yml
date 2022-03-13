@@ -2,7 +2,7 @@
 #
 
 image:
-  name: yelluc/docker-pipeline-builder:feature-terraform
+  name: yelluc/docker-pipeline-builder:latest
   entrypoint: ["/bin/sh", "-c"]
 
 cache:
