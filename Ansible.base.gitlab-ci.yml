@@ -8,7 +8,7 @@ image:
 cache:
   key: "${CI_PROJECT_NAME}-${CI_ENVIRONMENT_NAME}-${CI_PIPELINE_ID}"
   paths:
-    - ".ansible"
+    - "/root/.ansible"
 
 variables:
   # expects to be overriden but will look for terraform.tfvars if not
