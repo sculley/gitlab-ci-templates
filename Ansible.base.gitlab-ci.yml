@@ -41,6 +41,11 @@ variables:
         done
       fi
 
+.ansible:lint:
+  stage: lint
+  script:
+    - ansible-lint .
+
 .ansible:apply:
   stage: apply
   script:
