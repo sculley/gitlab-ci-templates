@@ -8,11 +8,11 @@ image:
 cache:
   key: "${CI_PROJECT_NAME}-${CI_ENVIRONMENT_NAME}-${CI_PIPELINE_ID}"
   paths:
-    - "/root/.ansible/"
+    - "$CI_PROJECT_DIR/.ansible/roles"
 
 variables:
-  # expects to be overriden but will look for terraform.tfvars if not
   ANSIBLE_HOST_KEY_CHECKING: "False"
+  ANSIBLE_ROLES_PATH: "$CI_PROJECT_DIR/.ansible/roles"
 
 .setup_ansible:
   script:
