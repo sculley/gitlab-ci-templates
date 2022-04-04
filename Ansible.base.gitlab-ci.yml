@@ -1,0 +1,53 @@
+# Ansible.base.gitlab-ci.yml
+#
+
+image:
+  name: yelluc/docker-pipeline-builder:latest
+  entrypoint: ["/bin/sh", "-c"]
+
+cache:
+  key: "${CI_PROJECT_NAME}-${CI_ENVIRONMENT_NAME}-${CI_PIPELINE_ID}"
+  paths:
+    - ".ansible"
+
+variables:
+  # expects to be overriden but will look for terraform.tfvars if not
+  ANSIBLE_HOST_KEY_CHECKING: "False"
+
+.setup_ansible:
+  script:
+    ##
+    ## Run ssh-agent (inside the build environment)
+    ##
+    - eval $(ssh-agent -s)
+
+    ##
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    ## We're using tr to fix line endings which makes ed25519 keys work
+    ## without extra base64 encoding.
+    ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
+    ##
+    - echo "$CLOUD_USER_KEY" | tr -d '\r' | ssh-add -
+
+.ansible:init:
+  stage: init
+  script:
+    - !reference [.setup_ansible, script]
+    - >
+      if [ ! -z "$ANSIBLE_ROLES" ];
+      then
+        for role in "$ANSIBLE_ROLES";
+          do ansible-galaxy install $role
+        done
+      fi
+
+.ansible:apply:
+  stage: apply
+  script:
+    - ansible-playbook -i hosts main.yml
+  when: manual
+  only:
+    refs:
+      - /^release.*/
+      - main
+      - tags
